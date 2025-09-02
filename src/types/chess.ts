@@ -24,6 +24,8 @@ export interface Player {
   name: string;
   color: PieceColor;
   timeRemaining: number; // in seconds
+  isAI?: boolean;
+  aiLevel?: 'easy' | 'medium' | 'hard';
 }
 
 export interface GameState {

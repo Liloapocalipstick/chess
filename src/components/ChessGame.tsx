@@ -1,13 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GameState, Position, ChessPiece, Player, ChessMove, PieceColor } from '@/types/chess';
 import { ChessBoard } from './ChessBoard';
 import { PlayerSetup } from './PlayerSetup';
 import { GameTimer } from './GameTimer';
 import { GameHistory } from './GameHistory';
 import { initializeBoard, getValidMoves, isSamePosition } from '@/utils/chessLogic';
+import { getBestMove } from '@/utils/chessAI';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { RotateCcw, Users, Trophy } from 'lucide-react';
+import { RotateCcw, Users, Trophy, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ChessGame = () => {
@@ -72,9 +73,57 @@ export const ChessGame = () => {
     setGameState(prev => ({ ...prev, players }));
   };
 
+  // AI Move Logic
+  useEffect(() => {
+    if (!gameState.gameStarted || gameState.winner) return;
+    
+    const currentPlayer = gameState.players.find(p => p.color === gameState.currentPlayer);
+    if (!currentPlayer?.isAI) return;
+    
+    const makeAIMove = async () => {
+      // Add slight delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const bestMove = getBestMove(gameState.board, gameState.currentPlayer, currentPlayer.aiLevel);
+      
+      if (bestMove) {
+        const newBoard = gameState.board.map(row => [...row]);
+        const movingPiece = newBoard[bestMove.from.row][bestMove.from.col];
+        const capturedPiece = newBoard[bestMove.to.row][bestMove.to.col];
+        
+        // Create move record
+        const move: ChessMove = {
+          from: bestMove.from,
+          to: bestMove.to,
+          piece: movingPiece!,
+          capturedPiece: capturedPiece || undefined,
+        };
+        
+        // Make the move
+        newBoard[bestMove.to.row][bestMove.to.col] = movingPiece;
+        newBoard[bestMove.from.row][bestMove.from.col] = null;
+        
+        setGameState(prev => ({
+          ...prev,
+          board: newBoard,
+          currentPlayer: gameState.currentPlayer === 'white' ? 'black' : 'white',
+          selectedSquare: null,
+          validMoves: [],
+          gameHistory: [...prev.gameHistory, move],
+        }));
+      }
+    };
+    
+    makeAIMove();
+  }, [gameState.currentPlayer, gameState.gameStarted, gameState.winner, gameState.players, gameState.board, gameState.gameHistory]);
+
   const handleSquareClick = useCallback((position: Position) => {
     const { board, currentPlayer, selectedSquare, validMoves } = gameState;
     const piece = board[position.row][position.col];
+    
+    // Don't allow moves if it's AI's turn
+    const currentPlayerObj = gameState.players.find(p => p.color === currentPlayer);
+    if (currentPlayerObj?.isAI || gameState.winner) return;
 
     // If no piece is selected
     if (!selectedSquare) {
@@ -177,17 +226,25 @@ export const ChessGame = () => {
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-2 text-lg mb-3">
-                  <Users className="w-5 h-5" />
-                  <span>Turno: </span>
-                  <span className={`font-bold capitalize ${
-                    gameState.currentPlayer === 'white' 
-                      ? 'text-chess-white-piece' 
-                      : 'text-chess-black-piece'
-                  }`}>
-                    {gameState.players.find(p => p.color === gameState.currentPlayer)?.name || 
-                     (gameState.currentPlayer === 'white' ? 'Blancas' : 'Negras')}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-lg">
+                    <Users className="w-5 h-5" />
+                    <span>Turno: </span>
+                    <span className={`font-bold capitalize ${
+                      gameState.currentPlayer === 'white' 
+                        ? 'text-chess-white-piece' 
+                        : 'text-chess-black-piece'
+                    }`}>
+                      {gameState.players.find(p => p.color === gameState.currentPlayer)?.name || 
+                       (gameState.currentPlayer === 'white' ? 'Blancas' : 'Negras')}
+                    </span>
+                  </div>
+                  {gameState.players.find(p => p.color === gameState.currentPlayer)?.isAI && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Bot className="w-4 h-4" />
+                      <span>La IA está pensando...</span>
+                    </div>
+                  )}
                 </div>
               )}
               
