@@ -52,6 +52,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				chess: {
+					light: 'hsl(var(--chess-light))',
+					dark: 'hsl(var(--chess-dark))',
+					highlight: 'hsl(var(--chess-highlight))',
+					selected: 'hsl(var(--chess-selected))',
+					check: 'hsl(var(--chess-check))',
+					'white-piece': 'hsl(var(--chess-white-piece))',
+					'black-piece': 'hsl(var(--chess-black-piece))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
