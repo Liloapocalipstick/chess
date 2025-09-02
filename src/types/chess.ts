@@ -19,6 +19,13 @@ export interface ChessMove {
   capturedPiece?: ChessPiece;
 }
 
+export interface Player {
+  id: string;
+  name: string;
+  color: PieceColor;
+  timeRemaining: number; // in seconds
+}
+
 export interface GameState {
   board: (ChessPiece | null)[][];
   currentPlayer: PieceColor;
@@ -28,4 +35,7 @@ export interface GameState {
   isCheck: boolean;
   isCheckmate: boolean;
   isDraw: boolean;
+  players: Player[];
+  gameStarted: boolean;
+  winner: PieceColor | null;
 }
